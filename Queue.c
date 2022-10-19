@@ -3,7 +3,7 @@
 //Tamanho padrão da fila.
 unsigned int Size;
 
-typedef struct {
+typedef struct{
 	int front;
 	int rear;
     void (*dequeue)();
@@ -17,12 +17,7 @@ typedef struct {
 void enqueue(Queue* Data, int Value){
     Data->rear++;
     if((Data->rear < Size)){
-        if(Data->rear >= Data->front){
-            Data->itens[Data->rear - Data->front] = Value;
-        }
-        else{
             Data->itens[Data->rear] = Value;
-        }
     }
     else{
         Data->rear--;
@@ -44,7 +39,7 @@ void dequeue(Queue* Data){
     }
 }
 
-//Exibe tamanho da pilha.
+//Exibe tamanho da fila.
 void length(Queue* Data){
     printf("%s%d", "THE QUEUE SIZE IS ", (Data->rear - Data->front) + 1);
 }
@@ -63,10 +58,10 @@ void foreach(Queue* Data){
     printf("%s", " ]");
 }
 
-//Inicial todos os elementos da pilha.
+//Inicial todos os elementos da fila.
 Queue NewQueue(size_t StackSize){
     //Variável auxiliar para configuração da Queue.
-    Queue tmp;
+    static Queue tmp;
     //Preenche as variáveis auxiliares de posição.
     tmp.front = 0;
     tmp.rear = -1;
