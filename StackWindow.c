@@ -1,4 +1,5 @@
 #include <windows.h>
+#include <wingdi.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -30,6 +31,7 @@ typedef struct{
 
 Vector2 AlignCenter(Vector2 ObjectSize);
 Vector2 Margin(int MarginX, int MarginY);
+Vector2 ComponentSize(double R_X, double R_Y);
 
 typedef struct{
     int top;
@@ -67,12 +69,16 @@ void push(Stack* Data, int Value){
 }
 
 void pop(Stack* Data){
+    printf("\n%d", Data->top);
     Data->top--;
+    if(Data->top < -1){
+        MessageBox(NULL, "Há ocorrência de underflow nessa pilha", "Underflow Error", MB_ICONERROR);
+        Data->top++;
+    }
 }
 
 //Main Function of a WIN32 app.
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLine, int nCmdShow){
-
     NewStack(&GlobalStackData, STACKSIZE);
 
     const wchar_t ClassName[] = L"Stack Window Class";
@@ -127,7 +133,7 @@ LRESULT CALLBACK WindowProc(HWND window, UINT uMsg, WPARAM wParam, LPARAM lParam
             case POP_OP:
                 char StackSizePop[20];
                 GlobalStackData.pop(&GlobalStackData);
-                sprintf(StackSizePop, "%d", GlobalStackData.top);
+                sprintf(StackSizePop, "%d", GlobalStackData.top + 1);
                 SetWindowText(StackSize, TEXT(StackSizePop));
                 SetWindowText(StackElements, TEXT(ElementsString()));
                 break;
@@ -138,7 +144,6 @@ LRESULT CALLBACK WindowProc(HWND window, UINT uMsg, WPARAM wParam, LPARAM lParam
         case WM_PAINT:
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(window, &ps);
-            //SetBkMode(hdc, TRANSPARENT);
             EndPaint(window, &ps);
             return 0;
         case WM_CLOSE:
@@ -155,31 +160,50 @@ LRESULT CALLBACK WindowProc(HWND window, UINT uMsg, WPARAM wParam, LPARAM lParam
 
 void CreateStackInfos(HWND window){
     //Info Title view.
+    Vector2 InfoTitleSize = ComponentSize(3.5, 35);
     Vector2 InfoTitlePosition = AlignCenter((Vector2){400, 20});
-    Vector2 InfoTitleMargin = Margin(0, 5);
+    Vector2 InfoTitleMargin = Margin(0, 3);
     InfoTitlePosition.y -= InfoTitleMargin.y;
-    HWND InfoTitle = CreateWindowW(L"STATIC", L"Stack:", WS_CHILD | WS_VISIBLE, InfoTitlePosition.x, InfoTitlePosition.y, 400, 20, window, NULL, NULL, NULL);
+    HWND InfoTitle = CreateWindowW(L"STATIC", L"Stack:", WS_CHILD | WS_VISIBLE, InfoTitlePosition.x, InfoTitlePosition.y, InfoTitleSize.x, InfoTitleSize.y, window, NULL, NULL, NULL);
     //Stack elements view.
+    Vector2 StackElementsSize = ComponentSize(3.5, 8);
     Vector2 StackElementsPosition = AlignCenter((Vector2){400, 100});
-    Vector2 StackElementsMargin = Margin(0, 10);
+    Vector2 StackElementsMargin = Margin(0, 4);
     StackElementsPosition.y -= StackElementsMargin.y;
-    StackElements = CreateWindowW(L"STATIC", L"[ ]", WS_CHILD | WS_VISIBLE, StackElementsPosition.x, StackElementsPosition.y, 400, 100, window, NULL, NULL, NULL);
+    StackElements = CreateWindowW(L"STATIC", L"[ ]", WS_CHILD | WS_VISIBLE, StackElementsPosition.x, StackElementsPosition.y, StackElementsSize.x, StackElementsSize.y, window, NULL, NULL, NULL);
     //Size Title.
+    Vector2 SizeTitleSize = ComponentSize(3.5, 35);
     Vector2 SizeTitlePosition = AlignCenter((Vector2){400, 200});
-    Vector2 SizeTitleMargin = Margin(0, 10);
-    SizeTitlePosition.y += SizeTitleMargin.y;
-    HWND SizeTitle = CreateWindowW(L"STATIC", L"Stack size is:", WS_CHILD | WS_VISIBLE, SizeTitlePosition.x, SizeTitlePosition.y, 400, 20, window, NULL, NULL, NULL);
+    Vector2 SizeTitleMargin = Margin(0, 20);
+    SizeTitlePosition.y -= SizeTitleMargin.y;
+    HWND SizeTitle = CreateWindowW(L"STATIC", L"Stack size is:", WS_CHILD | WS_VISIBLE, SizeTitlePosition.x, SizeTitlePosition.y, SizeTitleSize.x, SizeTitleSize.y, window, NULL, NULL, NULL);
     //Size.
+    Vector2 StackSizeViewSize = ComponentSize(3.5, 35);
     Vector2 StackSizePosition = AlignCenter((Vector2){400, 200});
-    Vector2 StackSizeMargin = Margin(0, 8);
-    StackSizePosition.y += StackSizeMargin.y;
-    StackSize = CreateWindowW(L"STATIC", L"0", WS_CHILD | WS_VISIBLE, StackSizePosition.x, StackSizePosition.y, 400, 20, window, NULL, NULL, NULL);
+    Vector2 StackSizeMargin = Margin(0, 50);
+    StackSizePosition.y -= StackSizeMargin.y;
+    StackSize = CreateWindowW(L"STATIC", L"0", WS_CHILD | WS_VISIBLE, StackSizePosition.x, StackSizePosition.y, StackSizeViewSize.x, StackSizeViewSize.y, window, NULL, NULL, NULL);
 }
 
 void CreateWindowButtons(HWND window){
-    InputArea = CreateWindowW(L"EDIT", L"", WS_VISIBLE | WS_CHILD | WS_BORDER, 0, 100, 100, 20, window, NULL, NULL, NULL);
-    HWND PushButton = CreateWindowW(L"BUTTON", L"Push", WS_VISIBLE | WS_CHILD, 0, 150, 100, 40, window, (HMENU)PUSH_OP, NULL, NULL);
-    HWND PopButton = CreateWindowW(L"BUTTON", L"Pop", WS_VISIBLE | WS_CHILD, 0, 200, 100, 40, window, (HMENU)POP_OP, NULL, NULL);
+    //Input Area format.
+    Vector2 InputSize = ComponentSize(3.5, 20);
+    Vector2 InputPosition = AlignCenter((Vector2){400, 40});
+    Vector2 InputMargin = Margin(0, 11);
+    InputPosition.y -= InputMargin.y;
+    InputArea = CreateWindowW(L"EDIT", L"", WS_VISIBLE | WS_CHILD | WS_BORDER, InputPosition.x, InputPosition.y, InputSize.x, InputSize.y, window, NULL, NULL, NULL);
+    //Push Button format.
+    Vector2 PushButtonSize = ComponentSize(3.5, 20);
+    Vector2 PushButtonPosition = AlignCenter((Vector2){400, 40});
+    Vector2 PushButtonMargin = Margin(0, 40);
+    PushButtonPosition.y -= PushButtonMargin.y;
+    HWND PushButton = CreateWindowW(L"BUTTON", L"Push", WS_VISIBLE | WS_CHILD, PushButtonPosition.x, PushButtonPosition.y, PushButtonSize.x, PushButtonSize.y, window, (HMENU)PUSH_OP, NULL, NULL);
+    //Pop Button format.
+    Vector2 PopButtonSize = ComponentSize(3.5, 20);
+    Vector2 PopButtonPosition = AlignCenter((Vector2){400, 40});
+    Vector2 PopButtonMargin = Margin(0, 25);
+    PopButtonPosition.y += PopButtonMargin.y;
+    HWND PopButton = CreateWindowW(L"BUTTON", L"Pop", WS_VISIBLE | WS_CHILD, PopButtonPosition.x, PopButtonPosition.y, PopButtonSize.x, PopButtonSize.y, window, (HMENU)POP_OP, NULL, NULL);
 }
 
 char* ElementsString(){
@@ -193,7 +217,7 @@ char* ElementsString(){
             strcat(StackView, StackElementString);
             strcat(StackView, " ]");
         }
-        else if(i <= GlobalStackData.top - 1){
+        else if(i <= GlobalStackData.top){
             StackView[strlen(StackView)] = '\0';
             StackView[strlen(StackView) - 1] = '\0';
             strcat(StackView, ", ");
@@ -209,7 +233,7 @@ char* ElementsString(){
 char* SizeOfStack(){
     static char StackSizePush[20];
     strcpy(StackSizePush, "\0"); 
-    sprintf(StackSizePush, "%d", GlobalStackData.top);
+    sprintf(StackSizePush, "%d", GlobalStackData.top + 1);
     return StackSizePush;
 }
 
@@ -226,5 +250,12 @@ Vector2 Margin(int MarginX, int MarginY){
     else tmp.x = 0;
     if(MarginY) tmp.y = floor(GetSystemMetrics(SM_CYSCREEN)/MarginY);
     else tmp.y = 0;
+    return tmp;
+}
+
+Vector2 ComponentSize(double R_X, double R_Y){
+    Vector2 tmp;
+    tmp.x = floor(GetSystemMetrics(SM_CXSCREEN)/R_X);
+    tmp.y = floor(GetSystemMetrics(SM_CYSCREEN)/R_Y);
     return tmp;
 }
