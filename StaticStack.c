@@ -1,13 +1,55 @@
+//Eduardo José Borges - ADS/2
+
 #include <windows.h>
-#include <wingdi.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+#include <stdio.h>
 #include <math.h>
 
 #define PUSH_OP 1
 #define POP_OP 2
-#define STACKSIZE 5
+#define STACK_SIZE 5
+
+typedef struct{
+    int top;
+    void (*push)(int);
+    int (*pop)();
+    int elements[STACK_SIZE];
+}Stack;
+
+Stack Data;
+
+void NewStack();
+void push(int Value);
+int pop();
+
+void NewStack(){
+    //Set top;
+    Data.top = -1;
+    //Link functions
+    Data.push = &push;
+    Data.pop = &pop;
+}
+
+void push(int Value){
+    Data.top++;
+    if(Data.top > STACK_SIZE - 1){
+        MessageBox(NULL, "Overflow!", "Overflow error", MB_ICONERROR);
+        Data.top--;
+    }
+    else{
+        Data.elements[Data.top] = Value;
+    }
+}
+
+int pop(){
+    int tmp = Data.elements[Data.top];
+    Data.top--;
+    if(Data.top < -1){
+        MessageBox(NULL, "Underflow!", "Underflow error", MB_ICONERROR);
+        Data.top++;
+    }
+    return tmp;
+}
 
 //Window Procedure Events.
 LRESULT CALLBACK WindowProc(HWND window, UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -33,53 +75,9 @@ Vector2 AlignCenter(Vector2 ObjectSize);
 Vector2 Margin(int MarginX, int MarginY);
 Vector2 ComponentSize(double R_X, double R_Y);
 
-typedef struct{
-    int top;
-    void (*push)();
-    void (*pop)();
-    int elements[STACKSIZE];
-}Stack;
-
-//Prototype of Stack functions.
-void newStack(int StackSize);
-void push(Stack* Data, int Value);
-void pop(Stack* Data);
-
-void NewStack(Stack* tmp, int StackSize){
-    //Link function to struct objects.
-    tmp->top = -1;
-    tmp->push = &push;
-    tmp->pop = &pop;
-    //Set stack elements quantity.
-    //tmp->elements = calloc(StackSize, sizeof(int));
-    //if(tmp->elements = NULL){
-        //MessageBox(NULL, "Error!", "We have a memory allocation error!", MB_OK | MB_ICONERROR);
-    //}
-}
-
-Stack GlobalStackData;
-
-void push(Stack* Data, int Value){
-    Data->top++;
-    Data->elements[Data->top] = Value;
-    if(Data->top > STACKSIZE - 1){
-        MessageBox(NULL, "Há ocorrência de overflow nessa pilha!", "Overflow Error", MB_ICONERROR);
-        Data->top--;
-    }
-}
-
-void pop(Stack* Data){
-    printf("\n%d", Data->top);
-    Data->top--;
-    if(Data->top < -1){
-        MessageBox(NULL, "Há ocorrência de underflow nessa pilha", "Underflow Error", MB_ICONERROR);
-        Data->top++;
-    }
-}
-
 //Main Function of a WIN32 app.
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLine, int nCmdShow){
-    NewStack(&GlobalStackData, STACKSIZE);
+    NewStack();
 
     const wchar_t ClassName[] = L"Stack Window Class";
     
@@ -126,15 +124,20 @@ LRESULT CALLBACK WindowProc(HWND window, UINT uMsg, WPARAM wParam, LPARAM lParam
             case PUSH_OP:
                 char Value[30];
                 GetWindowText(InputArea, Value, 30);
-                GlobalStackData.push(&GlobalStackData, atoi(Value));
-                SetWindowText(StackSize, TEXT(SizeOfStack()));
-                SetWindowText(StackElements, TEXT(ElementsString()));
+                if(!(atoi(Value)) && strcmp(Value, "0")){
+                    MessageBox(NULL, "Only integer numbers are accepted!", "Input Error!", MB_ICONERROR);
+                }
+                else{
+                    Data.push(atoi(Value));
+                    SetWindowText(StackSize, TEXT(SizeOfStack()));
+                    SetWindowText(StackElements, TEXT(ElementsString()));
+                }
                 break;
             case POP_OP:
                 char StackSizePop[20];
-                GlobalStackData.pop(&GlobalStackData);
-                sprintf(StackSizePop, "%d", GlobalStackData.top + 1);
-                SetWindowText(StackSize, TEXT(StackSizePop));
+                Data.pop();
+                sprintf(StackSizePop, "%d", Data.top + 1);
+                SetWindowText(StackSize, TEXT(SizeOfStack()));
                 SetWindowText(StackElements, TEXT(ElementsString()));
                 break;
             
@@ -170,7 +173,7 @@ void CreateStackInfos(HWND window){
     Vector2 StackElementsPosition = AlignCenter((Vector2){400, 100});
     Vector2 StackElementsMargin = Margin(0, 4);
     StackElementsPosition.y -= StackElementsMargin.y;
-    StackElements = CreateWindowW(L"STATIC", L"[ ]", WS_CHILD | WS_VISIBLE, StackElementsPosition.x, StackElementsPosition.y, StackElementsSize.x, StackElementsSize.y, window, NULL, NULL, NULL);
+    StackElements = CreateWindowW(L"STATIC", L"", WS_CHILD | WS_VISIBLE, StackElementsPosition.x, StackElementsPosition.y, StackElementsSize.x, StackElementsSize.y, window, NULL, NULL, NULL);
     //Size Title.
     Vector2 SizeTitleSize = ComponentSize(3.5, 35);
     Vector2 SizeTitlePosition = AlignCenter((Vector2){400, 200});
@@ -210,18 +213,18 @@ char* ElementsString(){
     static char StackView[512];
     strcpy(StackView, "\0");
     char* StackElementString = calloc(30, sizeof(char));
-    for(int i = 0; i <= GlobalStackData.top; i++){
+    for(int i = 0; i <= Data.top; i++){
         if((i == 0)){
             strcat(StackView, "[ ");
-            sprintf(StackElementString, "%d", GlobalStackData.elements[i]);
+            sprintf(StackElementString, "%d", Data.elements[i]);
             strcat(StackView, StackElementString);
             strcat(StackView, " ]");
         }
-        else if(i <= GlobalStackData.top){
+        else if(i <= Data.top){
             StackView[strlen(StackView)] = '\0';
             StackView[strlen(StackView) - 1] = '\0';
             strcat(StackView, ", ");
-            sprintf(StackElementString, "%d", GlobalStackData.elements[i]);
+            sprintf(StackElementString, "%d", Data.elements[i]);
             strcat(StackView, StackElementString);
             strcat(StackView, " ]");
         }
@@ -233,7 +236,7 @@ char* ElementsString(){
 char* SizeOfStack(){
     static char StackSizePush[20];
     strcpy(StackSizePush, "\0"); 
-    sprintf(StackSizePush, "%d", GlobalStackData.top + 1);
+    sprintf(StackSizePush, "%d", Data.top + 1);
     return StackSizePush;
 }
 
